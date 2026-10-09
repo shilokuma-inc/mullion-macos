@@ -1,6 +1,6 @@
 name: Archive
 
-# main への push で Archive → IPA Export まで通ることを確認する（アップロードはしない）。
+# main への push で Archive → .pkg の Export まで通ることを確認する（アップロードはしない）。
 # develop / release/** は upload.yml が Archive を含むため、ここでは実行しない。
 # 必要なときに手動でも確認できるよう workflow_dispatch も置く。
 on:

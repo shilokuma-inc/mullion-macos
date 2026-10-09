@@ -1,6 +1,6 @@
 //
 //  Project.xcconfig
-//  IOSTemplateApp
+//  Mullion
 //
 //  プロジェクト共通のビルド設定。
 //  テンプレートから新規リポジトリを作成したら、まずこのファイルの値を書き換える。
@@ -12,11 +12,11 @@ DEVELOPMENT_TEAM = XU74X3434S
 
 // アプリ本体の Bundle Identifier。
 // テストターゲットは $(APP_BUNDLE_IDENTIFIER).Tests / .UITests として派生させる
-APP_BUNDLE_IDENTIFIER = jp.shilokuma.IOSTemplateApp
+APP_BUNDLE_IDENTIFIER = jp.shilokuma.Mullion
 
 // バージョン（CFBundleShortVersionString / CFBundleVersion）
 MARKETING_VERSION = 1.0.0
 CURRENT_PROJECT_VERSION = 1
 
 // 最低サポート OS
-IPHONEOS_DEPLOYMENT_TARGET = 17.0
+MACOSX_DEPLOYMENT_TARGET = 14.0

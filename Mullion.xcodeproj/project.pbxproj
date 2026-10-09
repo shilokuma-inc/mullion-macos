@@ -12,53 +12,53 @@
 			containerPortal = 4FC9E1E12BF1049B00F630AB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4FC9E1E82BF1049B00F630AB;
-			remoteInfo = IOSTemplateApp;
+			remoteInfo = Mullion;
 		};
 		4FC9E2042BF1049C00F630AB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4FC9E1E12BF1049B00F630AB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 4FC9E1E82BF1049B00F630AB;
-			remoteInfo = IOSTemplateApp;
+			remoteInfo = Mullion;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4FC9E1E92BF1049B00F630AB /* IOSTemplateApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IOSTemplateApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4FC9E1F92BF1049C00F630AB /* IOSTemplateAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IOSTemplateAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4FC9E2032BF1049C00F630AB /* IOSTemplateAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IOSTemplateAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FC9E1E92BF1049B00F630AB /* Mullion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mullion.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FC9E1F92BF1049C00F630AB /* MullionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MullionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FC9E2032BF1049C00F630AB /* MullionUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MullionUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FA0000000000000000000C1 /* Project.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Project.xcconfig; sourceTree = "<group>"; };
 		4FA0000000000000000000C2 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		4FA0000000000000000000C3 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4FA0000000000000000000A1 /* Exceptions for "IOSTemplateApp" folder in "IOSTemplateApp" target */ = {
+		4FA0000000000000000000A1 /* Exceptions for "Mullion" folder in "Mullion" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 4FC9E1E82BF1049B00F630AB /* IOSTemplateApp */;
+			target = 4FC9E1E82BF1049B00F630AB /* Mullion */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4FA0000000000000000000B1 /* IOSTemplateApp */ = {
+		4FA0000000000000000000B1 /* Mullion */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FA0000000000000000000A1 /* Exceptions for "IOSTemplateApp" folder in "IOSTemplateApp" target */,
+				4FA0000000000000000000A1 /* Exceptions for "Mullion" folder in "Mullion" target */,
 			);
-			path = IOSTemplateApp;
+			path = Mullion;
 			sourceTree = "<group>";
 		};
-		4FA0000000000000000000B2 /* IOSTemplateAppTests */ = {
+		4FA0000000000000000000B2 /* MullionTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = IOSTemplateAppTests;
+			path = MullionTests;
 			sourceTree = "<group>";
 		};
-		4FA0000000000000000000B3 /* IOSTemplateAppUITests */ = {
+		4FA0000000000000000000B3 /* MullionUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = IOSTemplateAppUITests;
+			path = MullionUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -91,9 +91,9 @@
 		4FC9E1E02BF1049B00F630AB = {
 			isa = PBXGroup;
 			children = (
-				4FA0000000000000000000B1 /* IOSTemplateApp */,
-				4FA0000000000000000000B2 /* IOSTemplateAppTests */,
-				4FA0000000000000000000B3 /* IOSTemplateAppUITests */,
+				4FA0000000000000000000B1 /* Mullion */,
+				4FA0000000000000000000B2 /* MullionTests */,
+				4FA0000000000000000000B3 /* MullionUITests */,
 				4FC9E1EA2BF1049B00F630AB /* Products */,
 				4FA0000000000000000000C0 /* Configs */,
 			);
@@ -102,9 +102,9 @@
 		4FC9E1EA2BF1049B00F630AB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4FC9E1E92BF1049B00F630AB /* IOSTemplateApp.app */,
-				4FC9E1F92BF1049C00F630AB /* IOSTemplateAppTests.xctest */,
-				4FC9E2032BF1049C00F630AB /* IOSTemplateAppUITests.xctest */,
+				4FC9E1E92BF1049B00F630AB /* Mullion.app */,
+				4FC9E1F92BF1049C00F630AB /* MullionTests.xctest */,
+				4FC9E2032BF1049C00F630AB /* MullionUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -122,9 +122,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4FC9E1E82BF1049B00F630AB /* IOSTemplateApp */ = {
+		4FC9E1E82BF1049B00F630AB /* Mullion */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4FC9E20D2BF1049C00F630AB /* Build configuration list for PBXNativeTarget "IOSTemplateApp" */;
+			buildConfigurationList = 4FC9E20D2BF1049C00F630AB /* Build configuration list for PBXNativeTarget "Mullion" */;
 			buildPhases = (
 				4FC9E1E52BF1049B00F630AB /* Sources */,
 				4FC9E1E62BF1049B00F630AB /* Frameworks */,
@@ -136,16 +136,16 @@
 				4F27869F2BF3744F00E9F5EF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4FA0000000000000000000B1 /* IOSTemplateApp */,
+				4FA0000000000000000000B1 /* Mullion */,
 			);
-			name = IOSTemplateApp;
-			productName = IOSTemplateApp;
-			productReference = 4FC9E1E92BF1049B00F630AB /* IOSTemplateApp.app */;
+			name = Mullion;
+			productName = Mullion;
+			productReference = 4FC9E1E92BF1049B00F630AB /* Mullion.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4FC9E1F82BF1049C00F630AB /* IOSTemplateAppTests */ = {
+		4FC9E1F82BF1049C00F630AB /* MullionTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4FC9E2102BF1049C00F630AB /* Build configuration list for PBXNativeTarget "IOSTemplateAppTests" */;
+			buildConfigurationList = 4FC9E2102BF1049C00F630AB /* Build configuration list for PBXNativeTarget "MullionTests" */;
 			buildPhases = (
 				4FC9E1F52BF1049C00F630AB /* Sources */,
 				4FC9E1F62BF1049C00F630AB /* Frameworks */,
@@ -158,16 +158,16 @@
 				4FA0000000000000000000D1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4FA0000000000000000000B2 /* IOSTemplateAppTests */,
+				4FA0000000000000000000B2 /* MullionTests */,
 			);
-			name = IOSTemplateAppTests;
-			productName = IOSTemplateAppTests;
-			productReference = 4FC9E1F92BF1049C00F630AB /* IOSTemplateAppTests.xctest */;
+			name = MullionTests;
+			productName = MullionTests;
+			productReference = 4FC9E1F92BF1049C00F630AB /* MullionTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		4FC9E2022BF1049C00F630AB /* IOSTemplateAppUITests */ = {
+		4FC9E2022BF1049C00F630AB /* MullionUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4FC9E2132BF1049C00F630AB /* Build configuration list for PBXNativeTarget "IOSTemplateAppUITests" */;
+			buildConfigurationList = 4FC9E2132BF1049C00F630AB /* Build configuration list for PBXNativeTarget "MullionUITests" */;
 			buildPhases = (
 				4FC9E1FF2BF1049C00F630AB /* Sources */,
 				4FC9E2002BF1049C00F630AB /* Frameworks */,
@@ -180,11 +180,11 @@
 				4FA0000000000000000000E1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4FA0000000000000000000B3 /* IOSTemplateAppUITests */,
+				4FA0000000000000000000B3 /* MullionUITests */,
 			);
-			name = IOSTemplateAppUITests;
-			productName = IOSTemplateAppUITests;
-			productReference = 4FC9E2032BF1049C00F630AB /* IOSTemplateAppUITests.xctest */;
+			name = MullionUITests;
+			productName = MullionUITests;
+			productReference = 4FC9E2032BF1049C00F630AB /* MullionUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -210,7 +210,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4FC9E1E42BF1049B00F630AB /* Build configuration list for PBXProject "IOSTemplateApp" */;
+			buildConfigurationList = 4FC9E1E42BF1049B00F630AB /* Build configuration list for PBXProject "Mullion" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -227,9 +227,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4FC9E1E82BF1049B00F630AB /* IOSTemplateApp */,
-				4FC9E1F82BF1049C00F630AB /* IOSTemplateAppTests */,
-				4FC9E2022BF1049C00F630AB /* IOSTemplateAppUITests */,
+				4FC9E1E82BF1049B00F630AB /* Mullion */,
+				4FC9E1F82BF1049C00F630AB /* MullionTests */,
+				4FC9E2022BF1049C00F630AB /* MullionUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -289,12 +289,12 @@
 		};
 		4FC9E1FB2BF1049C00F630AB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4FC9E1E82BF1049B00F630AB /* IOSTemplateApp */;
+			target = 4FC9E1E82BF1049B00F630AB /* Mullion */;
 			targetProxy = 4FC9E1FA2BF1049C00F630AB /* PBXContainerItemProxy */;
 		};
 		4FC9E2052BF1049C00F630AB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4FC9E1E82BF1049B00F630AB /* IOSTemplateApp */;
+			target = 4FC9E1E82BF1049B00F630AB /* Mullion */;
 			targetProxy = 4FC9E2042BF1049C00F630AB /* PBXContainerItemProxy */;
 		};
 		4FA0000000000000000000D1 /* PBXTargetDependency */ = {
@@ -367,7 +367,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
+				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -429,7 +429,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				SDKROOT = iphoneos;
+				SDKROOT = macosx;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -445,23 +445,20 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = "\"IOSTemplateApp/Preview Content\"";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"Mullion/Preview Content\"";
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = IOSTemplateApp/Info.plist;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_FILE = Mullion/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -471,23 +468,20 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_ASSET_PATHS = "\"IOSTemplateApp/Preview Content\"";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"Mullion/Preview Content\"";
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = IOSTemplateApp/Info.plist;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_FILE = Mullion/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
-					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -501,8 +495,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IOSTemplateApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IOSTemplateApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mullion.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mullion";
 			};
 			name = Debug;
 		};
@@ -516,8 +509,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IOSTemplateApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/IOSTemplateApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mullion.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mullion";
 			};
 			name = Release;
 		};
@@ -531,8 +523,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = IOSTemplateApp;
+				TEST_TARGET_NAME = Mullion;
 			};
 			name = Debug;
 		};
@@ -546,15 +537,14 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = IOSTemplateApp;
+				TEST_TARGET_NAME = Mullion;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4FC9E1E42BF1049B00F630AB /* Build configuration list for PBXProject "IOSTemplateApp" */ = {
+		4FC9E1E42BF1049B00F630AB /* Build configuration list for PBXProject "Mullion" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4FC9E20B2BF1049C00F630AB /* Debug */,
@@ -563,7 +553,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4FC9E20D2BF1049C00F630AB /* Build configuration list for PBXNativeTarget "IOSTemplateApp" */ = {
+		4FC9E20D2BF1049C00F630AB /* Build configuration list for PBXNativeTarget "Mullion" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4FC9E20E2BF1049C00F630AB /* Debug */,
@@ -572,7 +562,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4FC9E2102BF1049C00F630AB /* Build configuration list for PBXNativeTarget "IOSTemplateAppTests" */ = {
+		4FC9E2102BF1049C00F630AB /* Build configuration list for PBXNativeTarget "MullionTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4FC9E2112BF1049C00F630AB /* Debug */,
@@ -581,7 +571,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4FC9E2132BF1049C00F630AB /* Build configuration list for PBXNativeTarget "IOSTemplateAppUITests" */ = {
+		4FC9E2132BF1049C00F630AB /* Build configuration list for PBXNativeTarget "MullionUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4FC9E2142BF1049C00F630AB /* Debug */,

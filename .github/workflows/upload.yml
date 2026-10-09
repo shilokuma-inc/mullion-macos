@@ -1,6 +1,6 @@
 name: Upload
 
-# develop / release/** への push で Archive → IPA Export → App Store Connect へアップロードする。
+# develop / release/** への push で Archive → .pkg の Export → App Store Connect へアップロードする。
 # 作業ブランチを TestFlight で確認したいときは、手動実行（workflow_dispatch）でそのブランチを選ぶ。
 # 作業ブランチの push ごとに上げると、App Store Connect の 24 時間あたりのアップロード上限に当たるため自動では上げない。
 on:
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   upload:
     # テンプレートリポジトリ自身など、App Store Connect にアプリが無いリポジトリではリポジトリ変数 ENABLE_DELIVERY=false でスキップする。
-    # Archive（main で IPA Export まで確認する）はアプリが無くても通るので止めない
+    # Archive（main で .pkg の Export まで確認する）はアプリが無くても通るので止めない
     if: vars.ENABLE_DELIVERY != 'false'
     uses: ./.github/workflows/_archive.yml
     with:
