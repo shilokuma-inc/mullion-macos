@@ -1,15 +1,15 @@
 //
-//  IOSTemplateAppTests.swift
-//  IOSTemplateAppTests
+//  MullionTests.swift
+//  MullionTests
 //
 //  Created by 村石 拓海 on 2024/05/12.
 //
 
 import Foundation
-@testable import IOSTemplateApp
+@testable import Mullion
 import Testing
 
-struct IOSTemplateAppTests {
+struct MullionTests {
     /// Configs/Project.xcconfig の MARKETING_VERSION が「x.y.z」形式で Info.plist に反映されていることを確認する
     @Test
     func marketingVersionIsSemanticVersion() throws {
