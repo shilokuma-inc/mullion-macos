@@ -37,11 +37,7 @@ jobs:
           project=$(basename -s .xcodeproj ./*.xcodeproj)
           echo "PROJECT_NAME=$project" >> "$GITHUB_ENV"
           echo "SCHEME=$project" >> "$GITHUB_ENV"
-          # 最新の iOS ランタイムに存在する iPhone シミュレータを UDID で選ぶ
-          # （名前だけの指定は OS:latest を暗黙に要求し、古いランタイムにしかないデバイスだと解決できない）
-          simulator=$(xcrun simctl list devices available -j | jq -r '.devices | to_entries | map(select(.key | contains("SimRuntime.iOS"))) | sort_by(.key | capture("iOS-(?<maj>[0-9]+)-(?<min>[0-9]+)") | [(.maj|tonumber),(.min|tonumber)]) | reverse | map(.value[] | select(.name | startswith("iPhone"))) | .[0]')
-          echo "SIMULATOR_ID=$(jq -r .udid <<<"$simulator")" >> "$GITHUB_ENV"
-          echo "project=$project scheme=$project simulator=$(jq -r '"\(.name) (\(.udid))"' <<<"$simulator")"
+          echo "project=$project scheme=$project"
 
       - name: Resolve Swift packages
         run: |
@@ -69,20 +65,27 @@ jobs:
         run: |
           options=()
           if [[ "$UI_TESTS" != "true" ]]; then
-            # UI テストは Simulator の clone と起動を含めて 2 分前後かかるため、作業ブランチでは省く
+            # UI テストはアプリの起動と操作を含めて時間がかかるため、作業ブランチでは省く
             options+=(-skip-testing:"${SCHEME}UITests")
           fi
-          # 並列テストを有効にすると Simulator の clone を作って起動するため、clone を作らずに実行する
+          # ランナーには署名用の証明書が無いためアドホック署名にする。
+          # App Sandbox を有効にしたままアドホック署名すると test runner がアプリに接続できずに止まるため、テスト時だけ無効にする
+          # 並列テストはテストランナーを複製して起動するため、テストが少ないうちは使わない
           xcodebuild test \
             -project "$PROJECT_NAME.xcodeproj" \
             -scheme "$SCHEME" \
-            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -destination "platform=macOS" \
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults.xcresult \
             -retry-tests-on-failure \
             -test-iterations 2 \
             -parallel-testing-enabled NO \
-            ${options[@]+"${options[@]}"}
+            ${options[@]+"${options[@]}"} \
+            CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM= \
+            PROVISIONING_PROFILE_SPECIFIER= \
+            ENABLE_APP_SANDBOX=NO
 
       - name: Upload test results
         if: ${{ !cancelled() }}
