@@ -16,20 +16,28 @@
 #
 # 入力（テキストの JSON）:
 #   {"mode": "list"}
-#       「ウィンドウを検索」で見つかったウィンドウを、手前から順に 1 行ずつ返す（各行はウィンドウのアプリ名）。
-#       アプリ側の CGWindowListCopyWindowInfo の並びと突き合わせ、何番目のウィンドウを動かせばよいかを決めるのに使う
-#   {"mode": "move", "index": 3, "x": 0, "y": 38, "width": 640, "height": 1080}
-#       手前から index 番目（1 始まり）のウィンドウを、左上が (x, y) で width × height の枠に動かす。
-#       座標はメイン画面の左上を原点とする（CGWindowListCopyWindowInfo と同じ）。完了したら "ok" を返す
+#       「ウィンドウを検索」で見つかったウィンドウの位置と大きさを、手前から順に 1 行ずつ「x|y|幅|高さ」で返す。
+#       アプリは CGWindowListCopyWindowInfo の位置・大きさと照らし合わせ、動かしたいウィンドウが何番目かを決める
+#   {"mode": "move", "index": 3, "expected": "2056|30|349|983", "x": 0, "y": 38, "width": 640, "height": 1080}
+#   {"mode": "resize", "index": 3, "expected": "2056|30|349|983", "x": 0, "y": 38, "width": 640, "height": 1080}
+#       手前から index 番目（1 始まり）のウィンドウの「x|y|幅|高さ」が expected と一致したときだけ、
+#       move なら左上を (x, y) に動かし、resize なら大きさを width × height にして "ok" を返す（x / y / width / height は両方で必須）。
+#       一致しなければ何もせず "mismatch|<実際の値>" を返す。
+#       座標はメイン画面の左上を原点とする（CGWindowListCopyWindowInfo と同じ）
+#
+#   1 回の呼び出しでは 1 つの操作しかしない。ショートカットの中で続けて操作すると、途中でウィンドウの重なり順が変わったときに
+#   別のウィンドウを動かしてしまう（実機で確認）。サイズ変更 → 移動 → サイズ変更の順番はアプリが受け持ち、
+#   毎回ウィンドウの一覧を読み直して expected を作る
 #
 # 組み方の根拠（いずれも実機で確かめられたもの）:
 #   - 辞書の値は型の無い項目なので、If の条件にそのまま渡すと「このアクションの各パラメータの値を選択してください」で止まる。
 #     いったん「テキスト」アクションで文字列にしてから If に渡す
 #   - 結果は「出力を停止」で明示的に返す。最後のアクションの結果は、Apple Events や CLI の呼び出し元には返らない
 #   - 数値は「数値」アクションを通してから渡す。辞書の値をそのまま渡すと、移動・サイズ変更は何もせずに成功扱いで終わる
-#   - 「ウィンドウを検索」の結果は使い回さず、操作のたびに検索し直す。同じ結果を 2 回使うと 2 回目が効かない
-#   - サイズ変更 → 移動 → サイズ変更の順にし、間に短い待ちを入れる。macOS は移動先を今のサイズで画面内に収めるため、
-#     先に縮めないと大きいウィンドウを端に寄せられない。待ちが無いと操作が追い越し合い、片方しか効かないことがある
+#   - 「ウィンドウを検索」の結果は、1 回のウィンドウ操作にしか使えない（同じ結果で 2 回操作すると 2 回目が効かない）。
+#     位置と大きさのプロパティを読むのは操作に入らない
+#   - アプリ側では、サイズ変更 → 移動 → サイズ変更の順に呼ぶ。macOS は移動先を今のサイズで画面内に収めるため、
+#     先に縮めないと大きいウィンドウを端に寄せられない
 #   - 「ウィンドウを検索」の絞り込みは、変数から渡したアプリ名では効かない。絞り込まずに全ウィンドウを取り、番号で選ぶ
 #   参考（いずれも MIT License）:
 #     https://github.com/daumedia/MikaGrid の features/01-app-store-vertrieb/machbarkeit.md
@@ -48,9 +56,6 @@ OUTPUT = ROOT / "Mullion" / "Shortcut" / "Mullion.shortcut"
 
 # 変数を差し込む位置を表す文字（Shortcuts のテキストで、1 文字ぶんの添付を置く場所）
 PLACEHOLDER = "￼"
-
-# 操作の間の待ち時間（秒）
-STEP_DELAY = 0.15
 
 # 参照: アクションの出力を (UUID, 出力名) で表す
 Ref = tuple[str, str]
@@ -109,6 +114,22 @@ def find_windows(name: str) -> tuple[dict, Ref]:
     )
 
 
+# ウィンドウの位置と大きさのプロパティ（「ウィンドウを検索」の並べ替えの項目と同じ名前）
+FRAME_PROPERTIES = ["X Position", "Y Position", "Width", "Height"]
+
+
+def frame_text(variable: dict) -> dict:
+    """ウィンドウの位置と大きさを「x|y|幅|高さ」にしたテキスト。variable はウィンドウを指す変数（ActionOutput か Repeat Item）"""
+    attachments = {}
+    for position, name in enumerate(FRAME_PROPERTIES):
+        attachments[f"{{{position * 2}, 1}}"] = {
+            **variable,
+            "Aggrandizements": [{"Type": "WFPropertyVariableAggrandizement", "PropertyName": name}],
+        }
+    string = "|".join([PLACEHOLDER] * len(FRAME_PROPERTIES))
+    return {"Value": {"string": string, "attachmentsByRange": attachments}, "WFSerializationType": "WFTextTokenString"}
+
+
 def stop_and_output(ref: Ref) -> dict:
     return action("output", WFOutput=text_with(ref))[0]
 
@@ -129,7 +150,7 @@ def build_actions() -> list[dict]:
     # If で比べられるよう、mode は文字列にしておく
     mode = add(action("gettext", "Mode", WFTextActionText=text_with(value_of("mode", "Mode Value"))))
 
-    # mode が list なら、見つかったウィンドウのアプリ名を 1 行ずつ返す
+    # mode が list なら、見つかったウィンドウの位置と大きさを 1 行ずつ返す
     group = ids.next()
     actions.append(
         action(
@@ -142,53 +163,107 @@ def build_actions() -> list[dict]:
         )[0]
     )
     found = add(find_windows("Windows"))
-    combined = add(action("text.combine", "Window List", WFTextSeparator="New Lines", text=output_of(found)))
+    repeat = ids.next()
+    actions.append(action("repeat.each", GroupingIdentifier=repeat, WFControlFlowMode=0, WFInput=output_of(found))[0])
+    actions.append(
+        action("gettext", "Window Frame", WFTextActionText=frame_text({"Type": "Variable", "VariableName": "Repeat Item"}))[0]
+    )
+    results = add(action("repeat.each", "Repeat Results", GroupingIdentifier=repeat, WFControlFlowMode=2))
+    combined = add(action("text.combine", "Window List", WFTextSeparator="New Lines", text=output_of(results)))
     actions.append(stop_and_output(combined))
 
-    # それ以外（move）なら、index 番目のウィンドウを動かす
+    # それ以外（move / resize）なら、index 番目のウィンドウを確かめてから 1 つだけ操作する
     actions.append(action("conditional", GroupingIdentifier=group, WFControlFlowMode=1)[0])
     numbers = {}
     for key, name in [("index", "Index"), ("x", "X"), ("y", "Y"), ("width", "Width"), ("height", "Height")]:
         numbers[key] = add(action("number", name, WFNumberActionNumber=output_of(value_of(key, f"{name} Value"))))
 
-    steps = ["resize", "move", "resize"]
-    for step, kind in enumerate(steps, start=1):
-        windows = add(find_windows(f"Windows {step}"))
-        window = add(
-            action(
-                "getitemfromlist",
-                f"Window {step}",
-                WFInput=output_of(windows),
-                WFItemSpecifier="Item At Index",
-                WFItemIndex=output_of(numbers["index"]),
-            )
+    # index 番目のウィンドウが、アプリが動かしたいウィンドウか（位置と大きさが expected と同じか）を確かめる
+    expected = add(action("gettext", "Expected", WFTextActionText=text_with(value_of("expected", "Expected Value"))))
+    check_windows = add(find_windows("Windows 0"))
+    check_window = add(
+        action(
+            "getitemfromlist",
+            "Window 0",
+            WFInput=output_of(check_windows),
+            WFItemSpecifier="Item At Index",
+            WFItemIndex=output_of(numbers["index"]),
         )
-        if kind == "resize":
-            actions.append(
-                action(
-                    "resizewindow",
-                    WFWindow=output_of(window),
-                    WFConfiguration="Dimensions",
-                    WFWidth=output_of(numbers["width"]),
-                    WFHeight=output_of(numbers["height"]),
-                    WFBringToFront=False,
-                )[0]
-            )
-        else:
-            actions.append(
-                action(
-                    "movewindow",
-                    WFWindow=output_of(window),
-                    WFPosition="Coordinates",
-                    WFXCoordinate=output_of(numbers["x"]),
-                    WFYCoordinate=output_of(numbers["y"]),
-                    WFBringToFront=False,
-                )[0]
-            )
-        if step < len(steps):
-            actions.append(action("delay", WFDelayTime=STEP_DELAY)[0])
+    )
+    actual = add(
+        action(
+            "gettext",
+            "Actual",
+            WFTextActionText=frame_text({"Type": "ActionOutput", "OutputUUID": check_window[0], "OutputName": check_window[1]}),
+        )
+    )
+    check = ids.next()
+    actions.append(
+        action(
+            "conditional",
+            GroupingIdentifier=check,
+            WFControlFlowMode=0,
+            WFCondition=4,
+            WFConditionalActionString=text_with(expected),
+            WFInput={"Type": "Variable", "Variable": output_of(actual)},
+        )[0]
+    )
+
+    # 一致したら、mode に応じて移動かサイズ変更のどちらか 1 つだけを行う。確かめたウィンドウをそのまま使う
+    window = output_of(check_window)
+    operation = ids.next()
+    actions.append(
+        action(
+            "conditional",
+            GroupingIdentifier=operation,
+            WFControlFlowMode=0,
+            WFCondition=4,
+            WFConditionalActionString="move",
+            WFInput={"Type": "Variable", "Variable": output_of(mode)},
+        )[0]
+    )
+    actions.append(
+        action(
+            "movewindow",
+            WFWindow=window,
+            WFPosition="Coordinates",
+            WFXCoordinate=output_of(numbers["x"]),
+            WFYCoordinate=output_of(numbers["y"]),
+            WFBringToFront=False,
+        )[0]
+    )
+    actions.append(action("conditional", GroupingIdentifier=operation, WFControlFlowMode=1)[0])
+    actions.append(
+        action(
+            "resizewindow",
+            WFWindow=window,
+            WFConfiguration="Dimensions",
+            WFWidth=output_of(numbers["width"]),
+            WFHeight=output_of(numbers["height"]),
+            WFBringToFront=False,
+        )[0]
+    )
+    actions.append(action("conditional", GroupingIdentifier=operation, WFControlFlowMode=2)[0])
     done = add(action("gettext", "Done", WFTextActionText="ok"))
     actions.append(stop_and_output(done))
+
+    # 一致しなければ何もせず、実際の値を返す
+    actions.append(action("conditional", GroupingIdentifier=check, WFControlFlowMode=1)[0])
+    mismatch = add(
+        action(
+            "gettext",
+            "Mismatch",
+            WFTextActionText={
+                "Value": {
+                    "string": "mismatch|" + PLACEHOLDER,
+                    "attachmentsByRange": {"{9, 1}": {"OutputUUID": actual[0], "OutputName": actual[1], "Type": "ActionOutput"}},
+                },
+                "WFSerializationType": "WFTextTokenString",
+            },
+        )
+    )
+    actions.append(stop_and_output(mismatch))
+    actions.append(action("conditional", GroupingIdentifier=check, WFControlFlowMode=2)[0])
 
     actions.append(action("conditional", GroupingIdentifier=group, WFControlFlowMode=2)[0])
     return actions
