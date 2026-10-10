@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct MullionApp: App {
+    @State private var model = ArrangementModel()
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        WindowGroup("Mullion") {
+            ContentView(model: model)
         }
+        .defaultSize(width: 680, height: 760)
     }
 }

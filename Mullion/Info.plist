@@ -4,5 +4,7 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>ショートカット「Mullion」を実行して、ほかのアプリのウィンドウを移動・サイズ変更するために使います。</string>
 </dict>
 </plist>
