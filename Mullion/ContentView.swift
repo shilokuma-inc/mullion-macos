@@ -51,7 +51,7 @@ private struct TargetAppPicker: View {
                     Text("\(id)（ウィンドウがありません）").tag(Optional(id))
                 }
             }
-            .frame(maxWidth: 360)
+            .fixedSize()
             Button("アプリの一覧を更新", systemImage: "arrow.clockwise") {
                 model.reloadTargetApps()
             }
