@@ -13,11 +13,15 @@ final class MullionUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// 起動すると、つながっている画面ごとに並べるボタンが出て、ショートカットを確かめるボタンも出る。
+    /// 確かめるまでは Apple Events を送らない（起動しただけで許可の確認を出さない）ので、テストでも確認は出ない
     @MainActor
-    func testLaunchShowsContentView() throws {
+    func testLaunchShowsScreenSections() throws {
         let app = XCUIApplication()
         app.launch()
 
-        XCTAssertTrue(app.staticTexts["Hello, world!"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["この画面に並べる"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["使えるか確かめる"].exists)
+        XCTAssertTrue(app.buttons["ショートカットを追加"].exists)
     }
 }
