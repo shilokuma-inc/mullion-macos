@@ -4,8 +4,16 @@
 画面ごとに解像度から分割できる上限を決め、狭い画面で細かく分けすぎてウィンドウが潰れないようにします。
 Mac App Store での配布を目指しています。
 
-> [!NOTE]
-> ウィンドウを並べる機能は開発中です。
+## 使い方
+
+1. 初めて使うときは「ショートカットを追加」を押し、ショートカットアプリでショートカット「Mullion」を追加します。続けて「使えるか確かめる」を押し、Mullion から Shortcuts Events を操作してよいかの確認に「OK」で答えます
+2. 画面ごとに、列の数と、列ごとの上下の分割数（段）を選びます。選べる上限は画面の大きさから決まり、分け方はプレビューで確認できます
+3. 必要なら「並べるアプリ」で対象のアプリを絞り込み、「この画面に並べる」を押します。その画面にあるウィンドウが、今の位置の左から順に、左の列の上の枠から並びます
+
+- 上限は、ウィンドウを置ける範囲（メニューバーと Dock を除く）を 1 マスの最小サイズ 340 × 320 pt で割って決めます。ターミナル（Ayuthaya 12pt）で約 46 桁 × 16 行が入る大きさです
+- 画面をつないだり外したり、解像度や Dock の位置を変えたりすると、上限を計算し直します。画面ごとの分け方は保存し、つなぎ直しても同じ画面には同じ分け方を使います
+- 枠より多いウィンドウは動かしません。アプリの最小サイズより狭い枠では、ウィンドウが枠どおりにならないことがあります（並べたあとに件数を表示します）
+- メイン画面より左か上にある画面には、今のバージョンでは並べられません（ショートカットの「ウィンドウを移動」が負の座標を受け付けないため）
 
 ## Environment
 
@@ -79,6 +87,26 @@ xcodebuild test \
 
 UI テスト（`MullionUITests`）は実際にアプリを起動して操作するため、手元で実行すると作業中の画面が使えなくなります。普段は CI に任せてください。
 
+### ウィンドウを動かす仕組み（ショートカット「Mullion」）
+
+Mac App Store のアプリは App Sandbox の中で動くため、Accessibility API でほかのアプリのウィンドウを動かせません。
+そこで、ウィンドウの位置と大きさはウィンドウサーバー（`CGWindowListCopyWindowInfo`）から読み、移動とサイズ変更はアプリに同梱したショートカット「Mullion」（[Mullion/Shortcut/Mullion.shortcut](Mullion/Shortcut/Mullion.shortcut)）に任せます。
+アプリからは Apple Events で Shortcuts Events にショートカットの実行を頼みます（[CompanionShortcut.swift](Mullion/Shortcut/CompanionShortcut.swift)）。
+
+- 送れる Apple Events は、entitlements の `com.apple.security.scripting-targets` で Shortcuts Events の「ショートカットの実行」だけに絞っています（[Mullion/Mullion.entitlements](Mullion/Mullion.entitlements)）
+- ショートカットは「手前から何番目のウィンドウか」でしかウィンドウを選べません。そのため、操作のたびにウィンドウの一覧を読み直して番号を決め、今の位置と大きさも渡します。ショートカットは位置と大きさが一致したときだけ操作するので、途中で重なり順が変わっても別のウィンドウを動かしません（[WindowMover.swift](Mullion/Windows/WindowMover.swift)）
+- 1 回の呼び出しでは 1 つの操作（移動かサイズ変更）しかしません。1 枚あたり、サイズ変更 → 移動 → サイズ変更の順に呼びます
+
+ショートカットは [scripts/make-companion-shortcut.py](scripts/make-companion-shortcut.py) で生成・署名します。入出力の形式と、ショートカットの組み方の根拠もこのスクリプトに書いています。
+
+```bash
+python3 scripts/make-companion-shortcut.py
+```
+
+- 署名に Apple のサーバーへの問い合わせがあり、数十秒かかります
+- 作り直したショートカットは、ファイルを開いてショートカットアプリで「置き換える」を選ぶまで手元に反映されません
+- 手元でショートカットを試すと、開いている本物のウィンドウが動きます。試すときは TextEdit などで捨ててよいウィンドウを開いて使います
+
 ### ビルド設定
 
 署名情報やバージョンは pbxproj ではなく [Configs/Project.xcconfig](Configs/Project.xcconfig) に集約しています。
@@ -146,11 +174,14 @@ UI の見た目が変わる変更では、Before / After のスクリーンシ�
 .
 ├── Configs/                  # xcconfig（署名情報・バージョン・Deployment Target）
 ├── Mullion/                  # アプリ本体（SwiftUI）
+│   ├── Layout/               # 分割できる上限と、列と段の分け方の計算
+│   ├── Windows/              # 画面とウィンドウの一覧の読み取り、枠への割り当て、ウィンドウの移動
+│   └── Shortcut/             # 同梱のショートカット「Mullion」と、Apple Events での実行
 ├── MullionTests/             # Unit テスト（Swift Testing）
 ├── MullionUITests/           # UI テスト（XCTest）
 ├── Mullion.xcodeproj         # 共有スキーム Mullion を含む
 ├── docs/                     # ExportOptions.plist のサンプル
-├── scripts/                  # rename.sh / ralph-loop の補助スクリプト
+├── scripts/                  # ショートカットの生成（make-companion-shortcut.py）/ rename.sh / ralph-loop の補助スクリプト
 ├── .swiftlint.yml            # SwiftLint 設定
 └── .github/
     ├── ISSUE_TEMPLATE/       # Issue テンプレート
@@ -169,7 +200,7 @@ UI の見た目が変わる変更では、Before / After のスクリーンシ�
 - プロジェクトはフォルダ同期グループ（Xcode 16 以降の形式）で管理しているため、ファイルの追加・削除で pbxproj は変わりません
 - SwiftLint は Build Tool Plugin として全ターゲットに適用され、CI では `swiftlint lint --strict` としても実行されます。ルールは [.swiftlint.yml](.swiftlint.yml) で管理します
 - CI のワークフローは `*.xcodeproj` の名前と同名の共有スキームが存在することを前提にしています
-- [Mullion/PrivacyInfo.xcprivacy](Mullion/PrivacyInfo.xcprivacy) はプライバシーマニフェストです。UserDefaults（`@AppStorage`）の利用だけを申告しています。データの収集・トラッキング・ほかの理由の申告が必要な API を足したら、ここと App Store Connect の「App のプライバシー」を更新してください
+- [Mullion/PrivacyInfo.xcprivacy](Mullion/PrivacyInfo.xcprivacy) はプライバシーマニフェストです。UserDefaults（画面ごとの分け方と、並べるアプリの保存）の利用だけを申告しています。データの収集・トラッキング・ほかの理由の申告が必要な API を足したら、ここと App Store Connect の「App のプライバシー」を更新してください
 
 ## License
 
