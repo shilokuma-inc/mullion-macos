@@ -45,7 +45,7 @@ struct ShortcutStatusView: View {
     private var icon: some View {
         switch model.shortcutStatus {
         case .unchecked:
-            Image(systemName: "square.split.3x1")
+            Image(systemName: "rectangle.split.3x1")
                 .foregroundStyle(.tint)
         case .checking:
             ProgressView()
