@@ -146,7 +146,6 @@ App Store Connect でのアプリ作成だけは API で行えないため、Web
 | その他の作業ブランチ | ✅（Unit テストのみ） | | |
 | Pull Request の作成時（opened / reopened / ready_for_review） | ✅ | | |
 | Fork からの Pull Request | ✅ | | |
-| `assets/**`（PR 用スクリーンショット置き場） | | | |
 
 - テストは macOS ランナー上で、アドホック署名・App Sandbox なしで実行します
 - Archive は、App Sandbox の entitlements を埋め込むためにアドホック署名で作り、Export のときに配布用の署名をし直します
@@ -204,8 +203,7 @@ gh pr view <番号> --json body -q .body \
         ├── _archive.yml      # 共通処理: Archive → .pkg の Export（→ Upload）（workflow_call）
         ├── build.yml         # 全ブランチの push / Fork からの PR
         ├── archive.yml       # main の push
-        ├── upload.yml        # develop / release/** の push
-        └── cleanup-assets-branch.yml # PR マージ時に assets/issue-<番号> ブランチを削除
+        └── upload.yml        # develop / release/** の push
 ```
 
 - [shilokuma-inc/template-app-ios](https://github.com/shilokuma-inc/template-app-ios) から作成し、macOS 専用に変えています
