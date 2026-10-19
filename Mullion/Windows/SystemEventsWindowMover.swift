@@ -10,7 +10,8 @@ import CoreGraphics
 /// ショートカット「Mullion」の「ウインドウを移動」は負の座標を受け付けないため、メイン画面より左か上にある画面にはこちらで動かす。
 /// System Events の座標もウィンドウサーバーと同じくメイン画面の左上が原点で、負の値も使える。
 /// 操作のたびにウィンドウサーバーから今の位置と大きさを読み、プロセスのウィンドウのうちそれと一致するものを System Events に選ばせるので、
-/// 途中でウィンドウが開閉されたり重なり順が変わったりしても、別のウィンドウを動かさない
+/// 途中でウィンドウが開閉されたり重なり順が変わったりしても、別のウィンドウを動かさない。
+/// 同じプロセスに同じ位置と大きさのウィンドウが重なっているときは、どれを動かすか選べないので動かさない
 nonisolated struct SystemEventsWindowMover: Sendable {
     typealias Outcome = WindowMover.Outcome
 
@@ -48,7 +49,7 @@ nonisolated struct SystemEventsWindowMover: Sendable {
 
     /// System Events への頼みごと。テストでは差し替える
     struct Client: Sendable {
-        /// プロセスのウィンドウの位置と大きさを返す
+        /// プロセスのウィンドウ（しまってあるものを含む）の位置と大きさを返す。同じ枠のウィンドウが何枚あるかを数えるのと、許可の確認に使う
         var windowFrames: @Sendable (pid_t) async throws -> [CGRect]
         /// プロセスのウィンドウのうち、位置と大きさが expected のものに操作を行い、大きさか位置を target にそろえる。
         /// 合うウィンドウが無ければ Failure.noSuchWindow を投げる
@@ -98,22 +99,38 @@ nonisolated struct SystemEventsWindowMover: Sendable {
             default:
                 break
             }
-            do {
-                try await client.perform(operation, window.ownerPID, current, target)
-                try await Task.sleep(for: settleDelay)
-                return nil
-            } catch let failure as Failure where failure == .noSuchWindow || failure == .accessibilityNotPermitted {
-                // -1719 は「合うウィンドウが無い」ときにも「アクセシビリティの許可が無い」ときにも返るため、読み直して見分ける
-                if !readWindows().contains(where: { $0.number == windowNumber }) {
-                    return .disappeared
-                }
-                // 許可が無ければ、ここで同じ分類のエラーが投げられる
-                _ = try await client.windowFrames(window.ownerPID)
-                // 読めたなら、一覧を読んでから頼むまでの間に位置や大きさが変わった。読み直してもう一度試す
-                try await Task.sleep(for: settleDelay)
+            // System Events は位置と大きさでしかウィンドウを選べないため、同じプロセスに同じ枠のウィンドウ（しまってあるものを含む）が
+            // ほかにもあると、どれが動くか分からない。そのときは動かさない。許可が無ければ、ここで分類したエラーが投げられる
+            let matches = try await client.windowFrames(window.ownerPID).filter { Self.isSameFrame($0, current) }.count
+            if matches > 1 {
+                return .notMoved
             }
+            if matches == 1 {
+                do {
+                    try await client.perform(operation, window.ownerPID, current, target)
+                    try await Task.sleep(for: settleDelay)
+                    return nil
+                } catch {
+                    // 頼んでいる間にウィンドウが閉じられると、合うウィンドウが無いなどのエラーになる
+                    if !readWindows().contains(where: { $0.number == windowNumber }) {
+                        return .disappeared
+                    }
+                    // -1719 は、アクセシビリティの許可が無いときのほか、合うウィンドウが無いときにも返る。
+                    // 直前に一覧を読めている（許可はある）ので、どちらも読んでから頼むまでの間に位置や大きさが変わったとみなす
+                    guard let failure = error as? Failure, failure == .noSuchWindow || failure == .accessibilityNotPermitted else {
+                        throw error
+                    }
+                }
+            }
+            // 一覧を読んでから頼むまでの間に、位置や大きさが変わった。読み直してもう一度試す
+            try await Task.sleep(for: settleDelay)
         }
         return .notMoved
+    }
+
+    /// System Events に渡すのと同じく、整数に丸めて比べる
+    static func isSameFrame(_ lhs: CGRect, _ rhs: CGRect) -> Bool {
+        [lhs.minX, lhs.minY, lhs.width, lhs.height].map { $0.rounded() } == [rhs.minX, rhs.minY, rhs.width, rhs.height].map { $0.rounded() }
     }
 
     private func isClose(_ lhs: CGPoint, _ rhs: CGPoint) -> Bool {
