@@ -5,6 +5,6 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>ショートカット「Mullion」を実行して、ほかのアプリのウィンドウを移動・サイズ変更するために使います。</string>
+	<string>ショートカット「Mullion」を実行して、ほかのアプリのウィンドウを移動・サイズ変更するために使います。メイン画面より左か上にある画面に並べるときは、System Events でウィンドウを動かします。</string>
 </dict>
 </plist>
