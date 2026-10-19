@@ -18,8 +18,7 @@ struct ScreenSection: View {
             VStack(alignment: .leading, spacing: 12) {
                 header(maxColumns: maxColumns, maxRows: maxRows)
                 if !screen.isReachable {
-                    Label("メイン画面より左か上にある画面には、今のバージョンでは並べられません。", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
+                    SystemEventsNotice(status: model.systemEventsStatus)
                 }
                 HStack(alignment: .top, spacing: 16) {
                     LayoutPreview(layout: layout, aspectRatio: screen.usableFrame.width / max(1, screen.usableFrame.height))
@@ -67,7 +66,7 @@ struct ScreenSection: View {
             Button("この画面に並べる") {
                 Task { await model.arrange(on: screen) }
             }
-            .disabled(model.arrangingScreenID != nil || !screen.isReachable)
+            .disabled(model.arrangingScreenID != nil)
             if model.arrangingScreenID == screen.id {
                 ProgressView()
                     .controlSize(.small)
@@ -92,6 +91,60 @@ struct ScreenSection: View {
             get: { model.layout(for: screen).rowCounts[safe: column] ?? 1 },
             set: { model.setRowCount($0, forColumn: column, on: screen) }
         )
+    }
+}
+
+/// メイン画面より左か上にある画面に出す、System Events で並べることと要る許可の説明
+struct SystemEventsNotice: View {
+    let status: SystemEventsStatus
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(message, systemImage: isProblem ? "exclamationmark.triangle" : "info.circle")
+                .foregroundStyle(isProblem ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+                .fixedSize(horizontal: false, vertical: true)
+            switch status {
+            case .automationNotPermitted:
+                Button("オートメーションの設定を開く") {
+                    open("Privacy_Automation")
+                }
+            case .accessibilityNotPermitted:
+                Button("アクセシビリティの設定を開く") {
+                    open("Privacy_Accessibility")
+                }
+            default:
+                EmptyView()
+            }
+        }
+        .font(.callout)
+    }
+
+    private var isProblem: Bool {
+        switch status {
+        case .unchecked, .ready: false
+        case .automationNotPermitted, .accessibilityNotPermitted, .failed: true
+        }
+    }
+
+    private var message: String {
+        switch status {
+        case .unchecked, .ready:
+            "この画面はメイン画面より左か上にあるため、System Events でウィンドウを動かします。"
+                + "初めて並べるときに、System Events の操作とアクセシビリティの許可を求められます。"
+        case .automationNotPermitted:
+            "Mullion に System Events の操作が許可されていません。システム設定の「プライバシーとセキュリティ」→「オートメーション」で、"
+                + "Mullion の「System Events」をオンにしてください。"
+        case .accessibilityNotPermitted:
+            "Mullion にアクセシビリティの許可がありません。システム設定の「プライバシーとセキュリティ」→「アクセシビリティ」で、"
+                + "Mullion をオンにしてください。"
+        case let .failed(message):
+            message
+        }
+    }
+
+    private func open(_ anchor: String) {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)") else { return }
+        NSWorkspace.shared.open(url)
     }
 }
 
