@@ -231,6 +231,8 @@ final class ArrangementModel {
             "Mullion にショートカットの実行が許可されていないため止めました"
         case CompanionShortcut.Failure.timedOut:
             "ショートカットが応答しないため止めました。ショートカットアプリに確認が出ていないか見てください"
+        case CompanionShortcut.Failure.shortcutsEventsUnavailable:
+            "ショートカットを実行する Shortcuts Events を起動できなかったため止めました。少し待ってから、もう一度お試しください"
         case let CompanionShortcut.Failure.shortcutFailed(message):
             "ショートカットの実行に失敗したため止めました（\(message)）"
         case let WindowMover.Failure.unexpectedReply(output) where output.isEmpty:
