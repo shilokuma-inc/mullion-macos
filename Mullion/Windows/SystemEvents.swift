@@ -31,13 +31,14 @@ nonisolated struct SystemEvents: Sendable {
         )
     }
 
-    /// プロセスのウィンドウの位置と大きさ。AppleScript の
+    /// プロセスのウィンドウ（しまってあるものを含む）の位置と大きさ。AppleScript の
     /// `{position, size} of every window of (first process whose unix id is pid)` にあたる
     @concurrent
     func windowFrames(pid: pid_t) async throws -> [CGRect] {
         let windows = Self.everyWindow(of: Self.process(pid: pid))
         let positions = try await send(Self.getEvent(Self.property("posn", of: windows)))
         let sizes = try await send(Self.getEvent(Self.property("ptsz", of: windows)))
+        // 位置と大きさを別々に読むので、間にウィンドウが開閉されると組み合わせがずれることがある。数えるのと許可の確認にだけ使う
         return Self.frames(positions: Self.reply(positions), sizes: Self.reply(sizes))
     }
 
@@ -176,9 +177,16 @@ nonisolated struct SystemEvents: Sendable {
     /// 2 つの整数のリスト（`{x, y}` や `{width, height}`）
     static func pair(_ first: CGFloat, _ second: CGFloat) -> NSAppleEventDescriptor {
         let list = NSAppleEventDescriptor.list()
-        list.insert(NSAppleEventDescriptor(int32: Int32(first.rounded())), at: 0)
-        list.insert(NSAppleEventDescriptor(int32: Int32(second.rounded())), at: 0)
+        list.insert(NSAppleEventDescriptor(int32: int32(first)), at: 0)
+        list.insert(NSAppleEventDescriptor(int32: int32(second)), at: 0)
         return list
+    }
+
+    /// 丸めて Int32 にする。範囲外や無限大でも落ちないように収める
+    private static func int32(_ value: CGFloat) -> Int32 {
+        let rounded = value.rounded()
+        guard rounded.isFinite else { return 0 }
+        return Int32(min(max(rounded, CGFloat(Int32.min)), CGFloat(Int32.max)))
     }
 
     /// 絞り込みの中の「調べている要素」（AppleScript の whose の中の its）
