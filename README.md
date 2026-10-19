@@ -94,6 +94,7 @@ Mac App Store のアプリは App Sandbox の中で動くため、Accessibility 
 アプリからは Apple Events で Shortcuts Events にショートカットの実行を頼みます（[CompanionShortcut.swift](Mullion/Shortcut/CompanionShortcut.swift)）。
 
 - 送れる Apple Events は、entitlements の `com.apple.security.scripting-targets` で Shortcuts Events の「ショートカットの実行」だけに絞っています（[Mullion/Mullion.entitlements](Mullion/Mullion.entitlements)）
+- Shortcuts Events はしばらく使われないと終了します。Apple Events を送るだけでは起動しない（終了している間に送ると OSStatus `-600` になる）ため、届かなかったら `NSWorkspace` で裏で起動してから送り直します
 - ショートカットは「手前から何番目のウィンドウか」でしかウィンドウを選べません。そのため、操作のたびにウィンドウの一覧を読み直して番号を決め、今の位置と大きさも渡します。ショートカットは位置と大きさが一致したときだけ操作するので、途中で重なり順が変わっても別のウィンドウを動かしません（[WindowMover.swift](Mullion/Windows/WindowMover.swift)）
 - 1 回の呼び出しでは 1 つの操作（移動かサイズ変更）しかしません。1 枚あたり、サイズ変更 → 移動 → サイズ変更の順に呼びます
 

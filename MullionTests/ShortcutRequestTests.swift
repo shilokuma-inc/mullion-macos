@@ -53,8 +53,77 @@ struct CompanionShortcutTests {
         #expect(CompanionShortcut.Failure.from(code: -1728, message: "") == .notInstalled)
         #expect(CompanionShortcut.Failure.from(code: -1743, message: "") == .notPermitted)
         #expect(CompanionShortcut.Failure.from(code: -1712, message: "") == .timedOut)
+        #expect(CompanionShortcut.Failure.from(code: -600, message: "") == .shortcutsEventsUnavailable)
+        #expect(CompanionShortcut.Failure.from(code: -609, message: "") == .shortcutsEventsUnavailable)
         #expect(CompanionShortcut.Failure.from(code: -1753, message: "項目0を求めています") == .shortcutFailed("項目0を求めています"))
         #expect(CompanionShortcut.Failure.from(code: -50, message: "") == .shortcutFailed("エラー -50"))
+    }
+
+    /// Shortcuts Events が動いていれば、起動せずにそのまま送る
+    @Test
+    func sendsWithoutLaunchingWhenRunning() async throws {
+        var sends = 0
+        var launches = 0
+        let reply = try await CompanionShortcut.sendLaunchingIfNeeded(retries: 3, retryDelay: .zero) {
+            sends += 1
+            return "ok"
+        } launch: {
+            launches += 1
+        }
+        #expect(reply == "ok")
+        #expect(sends == 1)
+        #expect(launches == 0)
+    }
+
+    /// Shortcuts Events が終了していたら、起動してから送り直す。起動の直後に届かなくても、間を置いて送り直す
+    @Test
+    func launchesAndResendsWhenNotRunning() async throws {
+        var sends = 0
+        var launches = 0
+        let reply = try await CompanionShortcut.sendLaunchingIfNeeded(retries: 3, retryDelay: .zero) {
+            sends += 1
+            guard sends >= 3 else { throw CompanionShortcut.Failure.shortcutsEventsUnavailable }
+            return "ok"
+        } launch: {
+            launches += 1
+        }
+        #expect(reply == "ok")
+        #expect(sends == 3)
+        #expect(launches == 1)
+    }
+
+    /// 起動しても届かなければ、決まった回数で諦める
+    @Test
+    func givesUpAfterRetries() async {
+        var sends = 0
+        var launches = 0
+        await #expect(throws: CompanionShortcut.Failure.shortcutsEventsUnavailable) {
+            try await CompanionShortcut.sendLaunchingIfNeeded(retries: 3, retryDelay: .zero) { () throws -> String in
+                sends += 1
+                throw CompanionShortcut.Failure.shortcutsEventsUnavailable
+            } launch: {
+                launches += 1
+            }
+        }
+        #expect(sends == 1 + 3)
+        #expect(launches == 1)
+    }
+
+    /// Shortcuts Events が動いていないこと以外のエラーは、起動も送り直しもせずにそのまま投げる
+    @Test
+    func doesNotLaunchForOtherFailures() async {
+        var sends = 0
+        var launches = 0
+        await #expect(throws: CompanionShortcut.Failure.notPermitted) {
+            try await CompanionShortcut.sendLaunchingIfNeeded(retries: 3, retryDelay: .zero) { () throws -> String in
+                sends += 1
+                throw CompanionShortcut.Failure.notPermitted
+            } launch: {
+                launches += 1
+            }
+        }
+        #expect(sends == 1)
+        #expect(launches == 0)
     }
 
     @Test
