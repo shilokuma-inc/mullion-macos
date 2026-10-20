@@ -224,23 +224,31 @@ final class ArrangementModel {
                 case .disappeared: break
                 }
             } catch {
+                report.failure = Self.message(for: error)
                 if usesSystemEvents {
                     systemEventsStatus = Self.systemEventsStatus(for: error)
                 } else {
                     shortcutStatus = Self.status(for: error)
                 }
-                report.failure = Self.message(for: error)
                 break
             }
         }
-        if report.failure == nil, report.placed + report.adjusted > 0 {
-            if usesSystemEvents {
-                systemEventsStatus = .ready
-            } else {
-                shortcutStatus = .ready
-            }
+        if report.failure == nil {
+            updateStatusAfterSuccess(usesSystemEvents: usesSystemEvents, attempted: !plan.placements.isEmpty, report: report)
         }
         reports[screen.id] = report
+    }
+
+    /// 止まらずに並べ終えたときに、使った手段の状態を「使える」にする
+    private func updateStatusAfterSuccess(usesSystemEvents: Bool, attempted: Bool, report: ArrangeReport) {
+        if usesSystemEvents {
+            // 許可が無ければ最初のウィンドウでエラーになる。止まらずに頼み終えたなら、動かせなかったウィンドウがあっても許可はある
+            if attempted {
+                systemEventsStatus = .ready
+            }
+        } else if report.placed + report.adjusted > 0 {
+            shortcutStatus = .ready
+        }
     }
 
     // MARK: - エラーの表し方
