@@ -91,11 +91,18 @@ final class ArrangementModel {
     private let defaults: UserDefaults
     private let shortcut = CompanionShortcut()
     private let movers: WindowMovers
+    private let currentScreens: @MainActor () -> [ScreenInfo]
 
-    init(limit: SplitLimit = .standard, defaults: UserDefaults = .standard, movers: WindowMovers = .live) {
+    init(
+        limit: SplitLimit = .standard,
+        defaults: UserDefaults = .standard,
+        movers: WindowMovers = .live,
+        currentScreens: @escaping @MainActor () -> [ScreenInfo] = ScreenInfo.current
+    ) {
         self.limit = limit
         self.defaults = defaults
         self.movers = movers
+        self.currentScreens = currentScreens
         layouts = defaults.data(forKey: Keys.layouts)
             .flatMap { try? JSONDecoder().decode([String: SplitLayout].self, from: $0) } ?? [:]
         targetAppID = defaults.string(forKey: Keys.targetApp)
@@ -105,7 +112,12 @@ final class ArrangementModel {
 
     /// 画面とアプリの一覧を読み直す。画面の構成が変わったときにも呼ぶ
     func reload() {
-        screens = ScreenInfo.current()
+        let previous = Dictionary(screens.map { ($0.id, $0.isReachable) }, uniquingKeysWith: { first, _ in first })
+        screens = currentScreens()
+        // 配置を変えて動かし方が変わった画面（許可が無くて止めた画面をメイン画面の右に置いた、など）は、前の結果を消す
+        for screen in screens where previous[screen.id].map({ $0 != screen.isReachable }) ?? false {
+            reports[screen.id] = nil
+        }
         reloadTargetApps()
     }
 
