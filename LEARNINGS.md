@@ -15,5 +15,5 @@
 ## System Events でウィンドウを動かすとき
 
 - System Events は -1719 を、補助アクセス（アクセシビリティ）が許可されていないときにも、指定に合う要素が無いとき（範囲外の番号）にも返す。番号だけで「許可が無い」と決めつけず、許可が無ければ失敗するはずの読み取り（`position of every window` など）を挟んで見分ける（2026-10-20）
-- System Events では位置と大きさ（whose）でしかウィンドウを選べないので、同じプロセスに同じ枠のウィンドウが重なっていると別のウィンドウを動かしうる。しまってあるウィンドウは画面上の一覧（`CGWindowList` の on screen）に出ないが System Events の `window` には含まれるので、数えるときは System Events 側の一覧で数える（2026-10-20）
+- しまってある（最小化した）ウィンドウは `CGWindowList` の on screen の一覧に出ないが、System Events の `window` には含まれる。ウィンドウサーバーの番号では System Events のウィンドウを指せないので、同じ枠のウィンドウが重なっていないかは System Events 側の一覧で数える（2026-10-20）
 - ループ（Claude Code）からは実際のウィンドウを動かして確かめられない（許可のダイアログで止まり、作業中のウィンドウが動く）。Apple Events を送る部分を差し替えられる形にして unit test で確かめ、実機での確認は needs-verify の Issue に切り出す（2026-10-20）
