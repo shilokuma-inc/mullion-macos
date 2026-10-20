@@ -15,20 +15,32 @@ nonisolated private final class MoveRecorder: @unchecked Sendable {
     private(set) var systemEventsMoves: [Int] = []
     var shortcutError: (any Error)?
     var systemEventsError: (any Error)?
+    var systemEventsOutcome = WindowMover.Outcome.placed
 
     func movers(windows: [WindowInfo]) -> WindowMovers {
         WindowMovers(
             readWindows: { windows },
-            shortcut: { number, _ in try self.record(number, error: self.shortcutError) { $0.shortcutMoves.append(number) } },
-            systemEvents: { number, _ in try self.record(number, error: self.systemEventsError) { $0.systemEventsMoves.append(number) } }
+            shortcut: { number, _ in
+                try self.record(number, error: self.shortcutError, outcome: .placed) { $0.shortcutMoves.append(number) }
+            },
+            systemEvents: { number, _ in
+                try self.record(number, error: self.systemEventsError, outcome: self.systemEventsOutcome) {
+                    $0.systemEventsMoves.append(number)
+                }
+            }
         )
     }
 
-    private func record(_ number: Int, error: (any Error)?, append: (MoveRecorder) -> Void) throws -> WindowMover.Outcome {
+    private func record(
+        _ number: Int,
+        error: (any Error)?,
+        outcome: WindowMover.Outcome,
+        append: (MoveRecorder) -> Void
+    ) throws -> WindowMover.Outcome {
         try lock.withLock {
             append(self)
             if let error { throw error }
-            return .placed
+            return outcome
         }
     }
 }
@@ -155,5 +167,79 @@ struct ArrangementModelTests {
         #expect(model.shortcutStatus == .notPermitted)
         #expect(model.systemEventsStatus == .unchecked)
         #expect(model.reports[wide.id]?.failure == "Mullion にショートカットの実行が許可されていないため止めました")
+    }
+
+    /// 許可を出したあとに並べ直したら、動かせなかったウィンドウしか無くても「使える」に戻す（許可が無いままの案内を出し続けない）
+    @Test
+    func clearsPermissionProblemAfterRetry() async throws {
+        let recorder = MoveRecorder()
+        recorder.systemEventsError = SystemEventsWindowMover.Failure.accessibilityNotPermitted
+        let model = ArrangementModel(defaults: try makeDefaults(), movers: recorder.movers(windows: windows))
+        await model.arrange(on: leftScreen)
+        #expect(model.systemEventsStatus == .accessibilityNotPermitted)
+
+        recorder.systemEventsError = nil
+        recorder.systemEventsOutcome = .notMoved
+        await model.arrange(on: leftScreen)
+        #expect(model.systemEventsStatus == .ready)
+        #expect(model.reports[leftScreen.id]?.notMoved == 1)
+    }
+
+    /// 並べるウィンドウが無ければ System Events に頼まないので、状態も変えない
+    @Test
+    func keepsStatusWhenNothingToArrange() async throws {
+        let recorder = MoveRecorder()
+        let model = ArrangementModel(defaults: try makeDefaults(), movers: recorder.movers(windows: []))
+        await model.arrange(on: leftScreen)
+        #expect(model.systemEventsStatus == .unchecked)
+        #expect(recorder.systemEventsMoves.isEmpty)
+    }
+
+    /// メイン画面の上にある画面も System Events で動かし、1 枚目で許可が無いと分かったら残りは頼まない
+    @Test
+    func stopsAtFirstFailureOnUpperScreen() async throws {
+        let upper = ScreenInfo(
+            id: "Upper",
+            name: "上の画面",
+            frame: CGRect(x: 0, y: -1080, width: 1920, height: 1080),
+            usableFrame: CGRect(x: 0, y: -1080, width: 1920, height: 1080)
+        )
+        let recorder = MoveRecorder()
+        recorder.systemEventsError = SystemEventsWindowMover.Failure.automationNotPermitted
+        let upperWindows = [
+            WindowInfo(number: 5, ownerPID: 101, ownerName: "テキストエディット", frame: CGRect(x: 100, y: -900, width: 600, height: 400)),
+            WindowInfo(number: 6, ownerPID: 102, ownerName: "メモ", frame: CGRect(x: 900, y: -900, width: 600, height: 400))
+        ]
+        let model = ArrangementModel(defaults: try makeDefaults(), movers: recorder.movers(windows: upperWindows))
+        await model.arrange(on: upper)
+        #expect(recorder.systemEventsMoves == [5])
+        #expect(recorder.shortcutMoves.isEmpty)
+        #expect(model.systemEventsStatus == .automationNotPermitted)
+    }
+
+    /// 画面の配置を変えて動かし方が変わった画面は、前の結果（許可が無くて止めた、など）を消す。変わっていない画面の結果は残す
+    @Test
+    func clearsReportWhenReachabilityChanges() async throws {
+        nonisolated(unsafe) var current = [leftScreen, wide]
+        let recorder = MoveRecorder()
+        recorder.systemEventsError = SystemEventsWindowMover.Failure.accessibilityNotPermitted
+        let model = ArrangementModel(defaults: try makeDefaults(), movers: recorder.movers(windows: windows), currentScreens: { current })
+        model.reload()
+        await model.arrange(on: leftScreen)
+        await model.arrange(on: wide)
+        #expect(model.reports[leftScreen.id]?.failure != nil)
+
+        // 内蔵ディスプレイをメイン画面の右に置き直した
+        let movedRight = ScreenInfo(
+            id: leftScreen.id,
+            name: leftScreen.name,
+            frame: CGRect(x: 4288, y: 0, width: 1728, height: 1117),
+            usableFrame: CGRect(x: 4288, y: 32, width: 1728, height: 1085)
+        )
+        current = [movedRight, wide]
+        model.reload()
+        #expect(model.screens == [movedRight, wide])
+        #expect(model.reports[leftScreen.id] == nil)
+        #expect(model.reports[wide.id] != nil)
     }
 }
