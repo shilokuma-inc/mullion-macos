@@ -91,11 +91,18 @@ final class ArrangementModel {
     private let defaults: UserDefaults
     private let shortcut = CompanionShortcut()
     private let movers: WindowMovers
+    private let currentScreens: @MainActor () -> [ScreenInfo]
 
-    init(limit: SplitLimit = .standard, defaults: UserDefaults = .standard, movers: WindowMovers = .live) {
+    init(
+        limit: SplitLimit = .standard,
+        defaults: UserDefaults = .standard,
+        movers: WindowMovers = .live,
+        currentScreens: @escaping @MainActor () -> [ScreenInfo] = ScreenInfo.current
+    ) {
         self.limit = limit
         self.defaults = defaults
         self.movers = movers
+        self.currentScreens = currentScreens
         layouts = defaults.data(forKey: Keys.layouts)
             .flatMap { try? JSONDecoder().decode([String: SplitLayout].self, from: $0) } ?? [:]
         targetAppID = defaults.string(forKey: Keys.targetApp)
@@ -105,7 +112,12 @@ final class ArrangementModel {
 
     /// 画面とアプリの一覧を読み直す。画面の構成が変わったときにも呼ぶ
     func reload() {
-        screens = ScreenInfo.current()
+        let previous = Dictionary(screens.map { ($0.id, $0.isReachable) }, uniquingKeysWith: { first, _ in first })
+        screens = currentScreens()
+        // 配置を変えて動かし方が変わった画面（許可が無くて止めた画面をメイン画面の右に置いた、など）は、前の結果を消す
+        for screen in screens where previous[screen.id].map({ $0 != screen.isReachable }) ?? false {
+            reports[screen.id] = nil
+        }
         reloadTargetApps()
     }
 
@@ -212,23 +224,31 @@ final class ArrangementModel {
                 case .disappeared: break
                 }
             } catch {
+                report.failure = Self.message(for: error)
                 if usesSystemEvents {
                     systemEventsStatus = Self.systemEventsStatus(for: error)
                 } else {
                     shortcutStatus = Self.status(for: error)
                 }
-                report.failure = Self.message(for: error)
                 break
             }
         }
-        if report.failure == nil, report.placed + report.adjusted > 0 {
-            if usesSystemEvents {
-                systemEventsStatus = .ready
-            } else {
-                shortcutStatus = .ready
-            }
+        if report.failure == nil {
+            updateStatusAfterSuccess(usesSystemEvents: usesSystemEvents, attempted: !plan.placements.isEmpty, report: report)
         }
         reports[screen.id] = report
+    }
+
+    /// 止まらずに並べ終えたときに、使った手段の状態を「使える」にする
+    private func updateStatusAfterSuccess(usesSystemEvents: Bool, attempted: Bool, report: ArrangeReport) {
+        if usesSystemEvents {
+            // 許可が無ければ最初のウィンドウでエラーになる。止まらずに頼み終えたなら、動かせなかったウィンドウがあっても許可はある
+            if attempted {
+                systemEventsStatus = .ready
+            }
+        } else if report.placed + report.adjusted > 0 {
+            shortcutStatus = .ready
+        }
     }
 
     // MARK: - エラーの表し方

@@ -94,56 +94,70 @@ struct ScreenSection: View {
     }
 }
 
-/// メイン画面より左か上にある画面に出す、System Events で並べることと要る許可の説明
+/// メイン画面より左か上にある画面に出す、System Events で並べることと要る許可の説明。
+/// 許可が無いと分かったら、許可の出し方と、許可を出さずに並べる方法（画面の配置やメイン画面の変え方）を案内する
 struct SystemEventsNotice: View {
     let status: SystemEventsStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label(message, systemImage: isProblem ? "exclamationmark.triangle" : "info.circle")
-                .foregroundStyle(isProblem ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
+            if let permission {
+                Label(permission.message, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(permission.buttonTitle) {
+                    open(permission.settingsURL)
+                }
+                Text("許可を出さずに並べるには、「システム設定」→「ディスプレイ」で、この画面をメイン画面の右か下に置くか、いちばん左上にある画面をメイン画面にしてください。")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("ディスプレイの設定を開く") {
+                    open("x-apple.systempreferences:com.apple.Displays-Settings.extension")
+                }
+            } else {
+                Label(
+                    "この画面はメイン画面より左か上にあるため、System Events でウィンドウを動かします。"
+                        + "初めて並べるときに、System Events の操作とアクセシビリティの許可を求められます。",
+                    systemImage: "info.circle"
+                )
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            switch status {
-            case .automationNotPermitted:
-                Button("オートメーションの設定を開く") {
-                    open("Privacy_Automation")
-                }
-            case .accessibilityNotPermitted:
-                Button("アクセシビリティの設定を開く") {
-                    open("Privacy_Accessibility")
-                }
-            default:
-                EmptyView()
             }
         }
         .font(.callout)
     }
 
-    private var isProblem: Bool {
-        switch status {
-        case .unchecked, .ready: false
-        case .automationNotPermitted, .accessibilityNotPermitted, .failed: true
-        }
-    }
-
-    private var message: String {
-        switch status {
-        case .unchecked, .ready:
-            "この画面はメイン画面より左か上にあるため、System Events でウィンドウを動かします。"
-                + "初めて並べるときに、System Events の操作とアクセシビリティの許可を求められます。"
+    /// 足りない許可。失敗の理由は並べた結果の文に出るので、許可が無いとき以外は説明だけを出す
+    private var permission: Permission? {
+        let security = "x-apple.systempreferences:com.apple.preference.security"
+        return switch status {
         case .automationNotPermitted:
-            "Mullion に System Events の操作が許可されていません。システム設定の「プライバシーとセキュリティ」→「オートメーション」で、"
-                + "Mullion の「System Events」をオンにしてください。"
+            Permission(
+                message: "Mullion に System Events の操作が許可されていません。システム設定の「プライバシーとセキュリティ」→「オートメーション」で、"
+                    + "Mullion の「System Events」をオンにしてください。",
+                buttonTitle: "オートメーションの設定を開く",
+                settingsURL: "\(security)?Privacy_Automation"
+            )
         case .accessibilityNotPermitted:
-            "Mullion にアクセシビリティの許可がありません。システム設定の「プライバシーとセキュリティ」→「アクセシビリティ」で、"
-                + "Mullion をオンにしてください。"
-        case let .failed(message):
-            message
+            Permission(
+                message: "Mullion にアクセシビリティの許可がありません。システム設定の「プライバシーとセキュリティ」→「アクセシビリティ」で、"
+                    + "Mullion をオンにしてください。",
+                buttonTitle: "アクセシビリティの設定を開く",
+                settingsURL: "\(security)?Privacy_Accessibility"
+            )
+        case .unchecked, .ready, .failed:
+            nil
         }
     }
 
-    private func open(_ anchor: String) {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(anchor)") else { return }
+    private struct Permission {
+        let message: String
+        let buttonTitle: String
+        let settingsURL: String
+    }
+
+    private func open(_ string: String) {
+        guard let url = URL(string: string) else { return }
         NSWorkspace.shared.open(url)
     }
 }
