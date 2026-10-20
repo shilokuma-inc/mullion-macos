@@ -24,6 +24,18 @@ enum ShortcutStatus: Equatable {
     case failed(String)
 }
 
+/// System Events でウィンドウを動かせるか。メイン画面より左か上にある画面に並べるときだけ使う
+enum SystemEventsStatus: Equatable {
+    /// まだ確かめていない（起動しただけで許可を求めないよう、確かめるのは左か上の画面で並べたとき）
+    case unchecked
+    case ready
+    /// 「オートメーション」で Mullion から System Events を操作することが許可されていない
+    case automationNotPermitted
+    /// 「アクセシビリティ」で Mullion が許可されていない
+    case accessibilityNotPermitted
+    case failed(String)
+}
+
 /// ある画面に並べた結果
 struct ArrangeReport: Equatable {
     var placed = 0
@@ -59,7 +71,7 @@ struct ArrangeReport: Equatable {
     }
 }
 
-/// 画面の一覧、画面ごとの分け方、ショートカットの状態をまとめ、ウィンドウを並べる
+/// 画面の一覧、画面ごとの分け方、ショートカットと System Events の状態をまとめ、ウィンドウを並べる
 @Observable
 final class ArrangementModel {
     private(set) var screens: [ScreenInfo] = []
@@ -69,6 +81,7 @@ final class ArrangementModel {
         didSet { defaults.set(targetAppID, forKey: Keys.targetApp) }
     }
     private(set) var shortcutStatus = ShortcutStatus.unchecked
+    private(set) var systemEventsStatus = SystemEventsStatus.unchecked
     /// 並べている最中の画面
     private(set) var arrangingScreenID: String?
     private(set) var reports: [String: ArrangeReport] = [:]
@@ -77,10 +90,19 @@ final class ArrangementModel {
     private var layouts: [String: SplitLayout]
     private let defaults: UserDefaults
     private let shortcut = CompanionShortcut()
+    private let movers: WindowMovers
+    private let currentScreens: @MainActor () -> [ScreenInfo]
 
-    init(limit: SplitLimit = .standard, defaults: UserDefaults = .standard) {
+    init(
+        limit: SplitLimit = .standard,
+        defaults: UserDefaults = .standard,
+        movers: WindowMovers = .live,
+        currentScreens: @escaping @MainActor () -> [ScreenInfo] = ScreenInfo.current
+    ) {
         self.limit = limit
         self.defaults = defaults
+        self.movers = movers
+        self.currentScreens = currentScreens
         layouts = defaults.data(forKey: Keys.layouts)
             .flatMap { try? JSONDecoder().decode([String: SplitLayout].self, from: $0) } ?? [:]
         targetAppID = defaults.string(forKey: Keys.targetApp)
@@ -90,7 +112,12 @@ final class ArrangementModel {
 
     /// 画面とアプリの一覧を読み直す。画面の構成が変わったときにも呼ぶ
     func reload() {
-        screens = ScreenInfo.current()
+        let previous = Dictionary(screens.map { ($0.id, $0.isReachable) }, uniquingKeysWith: { first, _ in first })
+        screens = currentScreens()
+        // 配置を変えて動かし方が変わった画面（許可が無くて止めた画面をメイン画面の右に置いた、など）は、前の結果を消す
+        for screen in screens where previous[screen.id].map({ $0 != screen.isReachable }) ?? false {
+            reports[screen.id] = nil
+        }
         reloadTargetApps()
     }
 
@@ -174,40 +201,54 @@ final class ArrangementModel {
 
     // MARK: - 並べる
 
-    /// screen にあるウィンドウを、分け方の枠に左の列から順に並べる
+    /// screen にあるウィンドウを、分け方の枠に左の列から順に並べる。
+    /// ショートカットで届く画面はショートカット「Mullion」で、メイン画面より左か上にある画面は System Events で動かす
     func arrange(on screen: ScreenInfo) async {
-        guard arrangingScreenID == nil, screen.isReachable else { return }
+        guard arrangingScreenID == nil else { return }
         arrangingScreenID = screen.id
         defer { arrangingScreenID = nil }
 
+        let usesSystemEvents = !screen.isReachable
         let slots = layout(for: screen).frames(in: screen.usableFrame)
-        let windows = WindowList.onScreenWindows().filter(isTarget)
+        let windows = movers.readWindows().filter(isTarget)
         let plan = ArrangementPlanner.plan(windows: windows, on: screen.frame, slots: slots)
-        let shortcut = shortcut
-        let mover = WindowMover(
-            runShortcut: { try await shortcut.run(input: $0) },
-            readWindows: { WindowList.onScreenWindows() }
-        )
+        let move = usesSystemEvents ? movers.systemEvents : movers.shortcut
 
         var report = ArrangeReport(leftovers: plan.leftovers.count)
         for placement in plan.placements {
             do {
-                switch try await mover.move(windowNumber: placement.window.number, to: placement.frame) {
+                switch try await move(placement.window.number, placement.frame) {
                 case .placed: report.placed += 1
                 case .adjusted: report.adjusted += 1
                 case .notMoved: report.notMoved += 1
                 case .disappeared: break
                 }
             } catch {
-                shortcutStatus = Self.status(for: error)
                 report.failure = Self.message(for: error)
+                if usesSystemEvents {
+                    systemEventsStatus = Self.systemEventsStatus(for: error)
+                } else {
+                    shortcutStatus = Self.status(for: error)
+                }
                 break
             }
         }
-        if report.failure == nil, report.placed + report.adjusted > 0 {
-            shortcutStatus = .ready
+        if report.failure == nil {
+            updateStatusAfterSuccess(usesSystemEvents: usesSystemEvents, attempted: !plan.placements.isEmpty, report: report)
         }
         reports[screen.id] = report
+    }
+
+    /// 止まらずに並べ終えたときに、使った手段の状態を「使える」にする
+    private func updateStatusAfterSuccess(usesSystemEvents: Bool, attempted: Bool, report: ArrangeReport) {
+        if usesSystemEvents {
+            // 許可が無ければ最初のウィンドウでエラーになる。止まらずに頼み終えたなら、動かせなかったウィンドウがあっても許可はある
+            if attempted {
+                systemEventsStatus = .ready
+            }
+        } else if report.placed + report.adjusted > 0 {
+            shortcutStatus = .ready
+        }
     }
 
     // MARK: - エラーの表し方
@@ -219,6 +260,14 @@ final class ArrangementModel {
         switch error {
         case CompanionShortcut.Failure.notInstalled: .notInstalled
         case CompanionShortcut.Failure.notPermitted: .notPermitted
+        default: .failed(message(for: error))
+        }
+    }
+
+    private static func systemEventsStatus(for error: any Error) -> SystemEventsStatus {
+        switch error {
+        case SystemEventsWindowMover.Failure.automationNotPermitted: .automationNotPermitted
+        case SystemEventsWindowMover.Failure.accessibilityNotPermitted: .accessibilityNotPermitted
         default: .failed(message(for: error))
         }
     }
@@ -239,8 +288,27 @@ final class ArrangementModel {
             firstRunHint
         case let WindowMover.Failure.unexpectedReply(output):
             "ショートカットから想定外の返事があったため止めました（\(output)）"
+        case let failure as SystemEventsWindowMover.Failure:
+            systemEventsMessage(for: failure)
         default:
             "途中で止めました（\(error.localizedDescription)）"
+        }
+    }
+
+    private static func systemEventsMessage(for failure: SystemEventsWindowMover.Failure) -> String {
+        switch failure {
+        case .automationNotPermitted:
+            "Mullion に System Events の操作が許可されていないため止めました"
+        case .accessibilityNotPermitted:
+            "Mullion にアクセシビリティの許可が無いため止めました"
+        case .systemEventsUnavailable:
+            "System Events を起動できなかったため止めました。少し待ってから、もう一度お試しください"
+        case .timedOut:
+            "System Events が応答しないため止めました。許可の確認が出ていないか見てください"
+        case .noSuchWindow:
+            "System Events でウィンドウが見つからなかったため止めました"
+        case let .failed(message):
+            "System Events での操作に失敗したため止めました（\(message)）"
         }
     }
 

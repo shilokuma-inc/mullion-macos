@@ -18,8 +18,7 @@ struct ScreenSection: View {
             VStack(alignment: .leading, spacing: 12) {
                 header(maxColumns: maxColumns, maxRows: maxRows)
                 if !screen.isReachable {
-                    Label("メイン画面より左か上にある画面には、今のバージョンでは並べられません。", systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
+                    SystemEventsNotice(status: model.systemEventsStatus)
                 }
                 HStack(alignment: .top, spacing: 16) {
                     LayoutPreview(layout: layout, aspectRatio: screen.usableFrame.width / max(1, screen.usableFrame.height))
@@ -67,7 +66,7 @@ struct ScreenSection: View {
             Button("この画面に並べる") {
                 Task { await model.arrange(on: screen) }
             }
-            .disabled(model.arrangingScreenID != nil || !screen.isReachable)
+            .disabled(model.arrangingScreenID != nil)
             if model.arrangingScreenID == screen.id {
                 ProgressView()
                     .controlSize(.small)
@@ -92,6 +91,74 @@ struct ScreenSection: View {
             get: { model.layout(for: screen).rowCounts[safe: column] ?? 1 },
             set: { model.setRowCount($0, forColumn: column, on: screen) }
         )
+    }
+}
+
+/// メイン画面より左か上にある画面に出す、System Events で並べることと要る許可の説明。
+/// 許可が無いと分かったら、許可の出し方と、許可を出さずに並べる方法（画面の配置やメイン画面の変え方）を案内する
+struct SystemEventsNotice: View {
+    let status: SystemEventsStatus
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let permission {
+                Label(permission.message, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(permission.buttonTitle) {
+                    open(permission.settingsURL)
+                }
+                Text("許可を出さずに並べるには、「システム設定」→「ディスプレイ」で、この画面をメイン画面の右か下に置くか、いちばん左上にある画面をメイン画面にしてください。")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("ディスプレイの設定を開く") {
+                    open("x-apple.systempreferences:com.apple.Displays-Settings.extension")
+                }
+            } else {
+                Label(
+                    "この画面はメイン画面より左か上にあるため、System Events でウィンドウを動かします。"
+                        + "初めて並べるときに、System Events の操作とアクセシビリティの許可を求められます。",
+                    systemImage: "info.circle"
+                )
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .font(.callout)
+    }
+
+    /// 足りない許可。失敗の理由は並べた結果の文に出るので、許可が無いとき以外は説明だけを出す
+    private var permission: Permission? {
+        let security = "x-apple.systempreferences:com.apple.preference.security"
+        return switch status {
+        case .automationNotPermitted:
+            Permission(
+                message: "Mullion に System Events の操作が許可されていません。システム設定の「プライバシーとセキュリティ」→「オートメーション」で、"
+                    + "Mullion の「System Events」をオンにしてください。",
+                buttonTitle: "オートメーションの設定を開く",
+                settingsURL: "\(security)?Privacy_Automation"
+            )
+        case .accessibilityNotPermitted:
+            Permission(
+                message: "Mullion にアクセシビリティの許可がありません。システム設定の「プライバシーとセキュリティ」→「アクセシビリティ」で、"
+                    + "Mullion をオンにしてください。",
+                buttonTitle: "アクセシビリティの設定を開く",
+                settingsURL: "\(security)?Privacy_Accessibility"
+            )
+        case .unchecked, .ready, .failed:
+            nil
+        }
+    }
+
+    private struct Permission {
+        let message: String
+        let buttonTitle: String
+        let settingsURL: String
+    }
+
+    private func open(_ string: String) {
+        guard let url = URL(string: string) else { return }
+        NSWorkspace.shared.open(url)
     }
 }
 

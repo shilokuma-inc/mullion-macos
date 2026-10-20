@@ -13,7 +13,7 @@ Mac App Store での配布を目指しています。
 - 上限は、ウィンドウを置ける範囲（メニューバーと Dock を除く）を 1 マスの最小サイズ 340 × 320 pt で割って決めます。ターミナル（Ayuthaya 12pt）で約 46 桁 × 16 行が入る大きさです
 - 画面をつないだり外したり、解像度や Dock の位置を変えたりすると、上限を計算し直します。画面ごとの分け方は保存し、つなぎ直しても同じ画面には同じ分け方を使います
 - 枠より多いウィンドウは動かしません。アプリの最小サイズより狭い枠では、ウィンドウが枠どおりにならないことがあります（並べたあとに件数を表示します）
-- メイン画面より左か上にある画面には、今のバージョンでは並べられません（ショートカットの「ウィンドウを移動」が負の座標を受け付けないため）
+- メイン画面より左か上にある画面には、ショートカットではなく System Events でウィンドウを動かします（ショートカットの「ウインドウを移動」が負の座標を受け付けないため）。初めてその画面でウィンドウを並べるときに、Mullion から System Events を操作してよいか（オートメーション）と、アクセシビリティの許可を求められます。許可を出さない場合は、「システム設定」→「ディスプレイ」で、すべての画面がメイン画面の右か下に来るように配置やメイン画面を変えれば、ショートカットだけで並べられます
 
 ## Environment
 
@@ -93,7 +93,7 @@ Mac App Store のアプリは App Sandbox の中で動くため、Accessibility 
 そこで、ウィンドウの位置と大きさはウィンドウサーバー（`CGWindowListCopyWindowInfo`）から読み、移動とサイズ変更はアプリに同梱したショートカット「Mullion」（[Mullion/Shortcut/Mullion.shortcut](Mullion/Shortcut/Mullion.shortcut)）に任せます。
 アプリからは Apple Events で Shortcuts Events にショートカットの実行を頼みます（[CompanionShortcut.swift](Mullion/Shortcut/CompanionShortcut.swift)）。
 
-- 送れる Apple Events は、entitlements の `com.apple.security.scripting-targets` で Shortcuts Events の「ショートカットの実行」だけに絞っています（[Mullion/Mullion.entitlements](Mullion/Mullion.entitlements)）
+- Shortcuts Events に送れる Apple Events は、entitlements の `com.apple.security.scripting-targets` で「ショートカットの実行」だけに絞っています（[Mullion/Mullion.entitlements](Mullion/Mullion.entitlements)）。メイン画面より左か上の画面のために、System Events にも送ります（下の「メイン画面より左か上にある画面を動かす仕組み」）
 - Shortcuts Events はしばらく使われないと終了します。Apple Events を送るだけでは起動しない（終了している間に送ると OSStatus `-600` になる）ため、届かなかったら `NSWorkspace` で裏で起動してから送り直します
 - ショートカットは「手前から何番目のウィンドウか」でしかウィンドウを選べません。そのため、操作のたびにウィンドウの一覧を読み直して番号を決め、今の位置と大きさも渡します。ショートカットは位置と大きさが一致したときだけ操作するので、途中で重なり順が変わっても別のウィンドウを動かしません（[WindowMover.swift](Mullion/Windows/WindowMover.swift)）
 - 1 回の呼び出しでは 1 つの操作（移動かサイズ変更）しかしません。1 枚あたり、サイズ変更 → 移動 → サイズ変更の順に呼びます
@@ -107,6 +107,17 @@ python3 scripts/make-companion-shortcut.py
 - 署名に Apple のサーバーへの問い合わせがあり、数十秒かかります
 - 作り直したショートカットは、ファイルを開いてショートカットアプリで「置き換える」を選ぶまで手元に反映されません
 - 手元でショートカットを試すと、開いている本物のウィンドウが動きます。試すときは TextEdit などで捨ててよいウィンドウを開いて使います
+
+### メイン画面より左か上にある画面を動かす仕組み（System Events）
+
+ショートカットの「ウインドウを移動」は負の座標を受け付けず、「ディスプレイ」の指定も効かないため、メイン画面より左か上にある画面（座標が負になる画面）には届きません。
+そのような画面だけ、System Events に Apple Events を送ってウィンドウを動かします（[SystemEvents.swift](Mullion/Windows/SystemEvents.swift)・[SystemEventsWindowMover.swift](Mullion/Windows/SystemEventsWindowMover.swift)）。
+届く画面は今までどおりショートカットで動かすので、メイン画面の右か下の画面だけを使う人には新しい許可を求めません。
+
+- System Events に送るには、entitlements の `com.apple.security.temporary-exception.apple-events`（`com.apple.systemevents`）が要ります。temporary-exception の entitlement は App Review で理由の説明を求められ、却下されるおそれがあります
+- Mullion に、オートメーション（System Events）とアクセシビリティの許可が要ります。起動しただけでは求めず、左か上の画面でウィンドウを並べるときに初めて System Events に送ります。許可が無いと分かったら、画面の欄に設定を開くボタンと、許可なしで並べる方法（ディスプレイの配置の変え方）を出します
+- 動かすウィンドウは、プロセスのウィンドウのうち位置と大きさがウィンドウサーバーから読んだ今の値と一致するものを、System Events に whose で選ばせます。同じプロセスに同じ位置と大きさのウィンドウ（しまってあるものを含む）がほかにもあるときは、どれが動くか分からないので動かしません
+- `NSAppleScript` はメインスレッドでしか使えず、許可の確認が出ている間は画面が止まるため、`NSAppleEventDescriptor` で Apple Event を組み立ててメインスレッドの外で送ります
 
 ### ビルド設定
 
@@ -188,7 +199,7 @@ body=$(gh pr view <番号> --json body -q .body) &&
 ├── Configs/                  # xcconfig（署名情報・バージョン・Deployment Target）
 ├── Mullion/                  # アプリ本体（SwiftUI）
 │   ├── Layout/               # 分割できる上限と、列と段の分け方の計算
-│   ├── Windows/              # 画面とウィンドウの一覧の読み取り、枠への割り当て、ウィンドウの移動
+│   ├── Windows/              # 画面とウィンドウの一覧の読み取り、枠への割り当て、ウィンドウの移動（ショートカット / System Events）
 │   └── Shortcut/             # 同梱のショートカット「Mullion」と、Apple Events での実行
 ├── MullionTests/             # Unit テスト（Swift Testing）
 ├── MullionUITests/           # UI テスト（XCTest）
