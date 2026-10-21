@@ -32,7 +32,8 @@ if [[ ! -f "${ICON}/icon.json" ]]; then
   exit 1
 fi
 
-# icon.json の image-name が指す SVG が Assets/ に無くても、ictool はエラーにせず背景だけの画像を書き出すので、先に確かめる
+# icon.json の image-name が指す SVG が Assets/ に無くても、ictool はエラーにせず背景だけの画像を書き出すので、先に確かめる。
+# 確かめるのは 1 行に 1 つ書いた "image-name" だけ（Icon Composer の書き出す形）。外観ごとの image-name-specializations は見ない
 missing=0
 while IFS= read -r image; do
   if [[ ! -f "${ICON}/Assets/${image}" ]]; then
@@ -47,7 +48,11 @@ fi
 DEVELOPER_DIR="${DEVELOPER_DIR:-$(xcode-select -p 2>/dev/null || true)}"
 ICTOOL="${DEVELOPER_DIR}/../Applications/Icon Composer.app/Contents/Executables/ictool"
 if [[ -z "$DEVELOPER_DIR" || ! -x "$ICTOOL" ]]; then
-  echo "ictool が見つかりません: ${ICTOOL}" >&2
+  if [[ -z "$DEVELOPER_DIR" ]]; then
+    echo "xcode-select -p で Xcode の場所を得られませんでした" >&2
+  else
+    echo "ictool が見つかりません: ${ICTOOL}" >&2
+  fi
   echo "Xcode 26 以降を入れ、DEVELOPER_DIR に Xcode の Contents/Developer を指定して実行してください" >&2
   printf '  例: DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer %q %q %q\n' "$0" "$1" "$2" >&2
   exit 1
