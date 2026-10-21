@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- 頭文字 M。フォントを使わず、2 本の縦の柱と V 字を 1 つの多角形で描く -->
-  <path fill="#FFF4E6" d="M208 800 V224 H340 L512 468 L684 224 H816 V800 H688 V436 L512 680 L336 436 V800 Z"/>
-</svg>

@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- 縦桟で分けられた 3 枚のガラス（枠の後ろに置く） -->
-  <g fill="#A8DCC5">
-    <rect x="236" y="240" width="172" height="544"/>
-    <rect x="432" y="240" width="160" height="544"/>
-    <rect x="616" y="240" width="172" height="544"/>
-  </g>
-</svg>
