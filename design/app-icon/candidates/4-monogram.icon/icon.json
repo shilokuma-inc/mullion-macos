@@ -1,0 +1,27 @@
+{
+  "fill" : {
+    "solid" : "srgb:0.76471,0.33725,0.23529,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "m.svg",
+          "name" : "m"
+        }
+      ],
+      "name" : "Monogram",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.2
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
