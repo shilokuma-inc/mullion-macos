@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- 3 つのウィンドウの本体。左の列に縦長の 1 つ、右の列に上下 2 つ -->
+  <g fill="#E9ECF0">
+    <rect x="176" y="200" width="320" height="624" rx="40"/>
+    <rect x="544" y="200" width="304" height="296" rx="40"/>
+    <rect x="544" y="528" width="304" height="296" rx="40"/>
+  </g>
+</svg>
