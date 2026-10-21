@@ -119,6 +119,27 @@ python3 scripts/make-companion-shortcut.py
 - 動かすウィンドウは、プロセスのウィンドウのうち位置と大きさがウィンドウサーバーから読んだ今の値と一致するものを、System Events に whose で選ばせます。同じプロセスに同じ位置と大きさのウィンドウ（しまってあるものを含む）がほかにもあるときは、どれが動くか分からないので動かしません
 - `NSAppleScript` はメインスレッドでしか使えず、許可の確認が出ている間は画面が止まるため、`NSAppleEventDescriptor` で Apple Event を組み立ててメインスレッドの外で送ります
 
+### アプリアイコン
+
+アプリアイコンは Icon Composer の形式（`.icon`）で、[Mullion/AppIcon.icon](Mullion/AppIcon.icon) に置いています。`Mullion/` はフォルダ同期グループなので、ここに置くだけでアプリに入ります（`ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`）。macOS 26 のダーク・色付き・クリアの見た目は OS が描き分けます。
+
+- `.icon` はディレクトリで、中身は `icon.json`（背景の色、レイヤーのグループと、ガラス・半透明・影の設定）と `Assets/` の SVG（`titlebars.svg`・`windows.svg`）です。`icon.json` の `layers` は先頭が最前面です
+- 図形は SVG の塗り（`path`・`rect`）だけで描いています。Mac App Store に出すため、フォント（`<text>`）や既存の素材は使いません。線（`stroke`）は Liquid Glass の描画で継ぎ目に線が出ることがあるので、使わずに塗りで描きます
+- 背景は暗い色なので、ダークでもシステムが灰色に置き換えないよう、`fill-specializations` の `"appearance" : "dark"` にライトと同じ色を書いています
+- `.icon` にはサイズごとの絵を入れられません。16px でも形が潰れない太さ・数の図形にします
+
+直すときは、Icon Composer のアプリで開くか、SVG と `icon.json` を手で直し、[scripts/render-app-icon.sh](scripts/render-app-icon.sh) で PNG に書き出して見た目を確かめます。
+
+```bash
+# 6 つの外観（Default・Dark・ClearLight・ClearDark・TintedLight・TintedDark）の 1024px と、16・32・64・128px を書き出す
+# 出力先はリポジトリの外にする（画像はコミットしない）
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer scripts/render-app-icon.sh Mullion/AppIcon.icon ~/Desktop/icon-check
+```
+
+- 書き出しには Xcode 26 以降に同梱の Icon Composer の `ictool`（`$DEVELOPER_DIR/../Applications/Icon Composer.app/Contents/Executables/ictool`）を使います。`xcode-select` が CommandLineTools を指している Mac では、`DEVELOPER_DIR` に Xcode の `Contents/Developer` を指定します。`Xcode.app/Contents/Developer/usr/bin/ictool` は別のツールで、画像を書き出せません
+- `icon.json` の書き間違いや SVG の参照先の誤りは、エラーにならずに既定の見た目で書き出されることがあります（スクリプトは参照先の SVG が無いときは止めます）。書き出した画像は必ず開いて確かめてください
+- macOS 14 / 15 向けには、ビルドのときに Xcode が `.icon` から `Contents/Resources/AppIcon.icns`（ガラスの質感が焼き込まれた画像）と `Assets.car` の画像を作ります。ビルドした `Mullion.app` の `AppIcon.icns` を `iconutil -c iconset` で取り出すと、旧 OS での見た目を確かめられます
+
 ### ビルド設定
 
 署名情報やバージョンは pbxproj ではなく [Configs/Project.xcconfig](Configs/Project.xcconfig) に集約しています。
@@ -198,6 +219,7 @@ body=$(gh pr view <番号> --json body -q .body) &&
 .
 ├── Configs/                  # xcconfig（署名情報・バージョン・Deployment Target）
 ├── Mullion/                  # アプリ本体（SwiftUI）
+│   ├── AppIcon.icon/         # アプリアイコン（Icon Composer の形式。icon.json と Assets/ の SVG）
 │   ├── Layout/               # 分割できる上限と、列と段の分け方の計算
 │   ├── Windows/              # 画面とウィンドウの一覧の読み取り、枠への割り当て、ウィンドウの移動（ショートカット / System Events）
 │   └── Shortcut/             # 同梱のショートカット「Mullion」と、Apple Events での実行
@@ -205,7 +227,7 @@ body=$(gh pr view <番号> --json body -q .body) &&
 ├── MullionUITests/           # UI テスト（XCTest）
 ├── Mullion.xcodeproj         # 共有スキーム Mullion を含む
 ├── docs/                     # ExportOptions.plist のサンプル
-├── scripts/                  # ショートカットの生成（make-companion-shortcut.py）/ rename.sh / ralph-loop の補助スクリプト
+├── scripts/                  # ショートカットの生成（make-companion-shortcut.py）/ アプリアイコンの書き出し（render-app-icon.sh）/ rename.sh / ralph-loop の補助スクリプト
 ├── .swiftlint.yml            # SwiftLint 設定
 └── .github/
     ├── ISSUE_TEMPLATE/       # Issue テンプレート
