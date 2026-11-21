@@ -42,9 +42,6 @@ Mac App Store での配布を目指しています。
           </a>
         </td>
         <td style="border:2px double #000080;text-align:center;">
-          <a href="https://github.com/shilokuma-inc/mullion-macos/actions/workflows/archive.yml?query=branch%3Amain">
-            <img src="https://github.com/shilokuma-inc/mullion-macos/actions/workflows/archive.yml/badge.svg?branch=main" alt="Archive">
-          </a>
         </td>
         <td style="border:2px double #000080;text-align:center;">
         </td>
@@ -173,19 +170,20 @@ App Store Connect でのアプリ作成だけは API で行えないため、Web
 
 | ブランチ | Build（ビルド + テスト + SwiftLint） | Archive（.pkg の Export） | Upload（App Store Connect） |
 |---|:-:|:-:|:-:|
-| `main` | ✅ | ✅ | |
+| `main` | ✅ | | |
 | `develop` | ✅ | | ✅ |
 | `release/**` | ✅ | | ✅ |
 | その他の作業ブランチ | ✅（Unit テストのみ） | | |
 | Pull Request の作成時（opened / reopened / ready_for_review） | ✅ | | |
 | Fork からの Pull Request | ✅ | | |
+| 手動実行（workflow_dispatch） | | ✅ | ✅ |
 
 - テストは macOS ランナー上で、アドホック署名・App Sandbox なしで実行します
 - Archive は、App Sandbox の entitlements を埋め込むためにアドホック署名で作り、Export のときに配布用の署名をし直します
 - Upload は Archive → .pkg の Export を含むため、`develop` / `release/**` では Archive を別途実行しません
-- Archive / Upload は Actions タブから手動でも実行できます（Run workflow）。作業ブランチを TestFlight で確認したいときは、Upload を手動実行してそのブランチを選びます
+- `main` への push で実行するのは Build だけです。Archive は Actions タブから手動で実行します（Run workflow）。Upload は手動でも実行でき、作業ブランチを TestFlight で確認したいときは、そのブランチを選んで実行します
 - リポジトリ変数（Settings → Secrets and variables → Actions → Variables）に `ENABLE_DELIVERY=false` を設定すると Upload をスキップします
-- ドキュメントだけの変更（`**/*.md`、`docs/**`）では Build を実行しません。Upload（`develop` / `release/**` への push）と Archive（`main` への push）は、ドキュメントだけの変更でも実行します
+- ドキュメントだけの変更（`**/*.md`、`docs/**`）では Build を実行しません。Upload（`develop` / `release/**` への push）は、ドキュメントだけの変更でも実行します
 - 作業ブランチへの push では、時間のかかる UI テスト（`MullionUITests`）を省いて Unit テストだけ実行します。UI テストは Pull Request の作成時と `main` / `develop` / `release/**` への push で実行します。Fork からの Pull Request は push で実行されないため、更新（synchronize）を含むすべてのイベントで UI テストまで実行します
 - Xcode のバージョンは [.github/workflows/_build.yml](.github/workflows/_build.yml) と [.github/workflows/_archive.yml](.github/workflows/_archive.yml) の `xcode-version` で固定しています。Environment の更新時はあわせて変更してください
 
@@ -237,7 +235,7 @@ body=$(gh pr view <番号> --json body -q .body) &&
         ├── _build.yml        # 共通処理: ビルド + テスト + SwiftLint（workflow_call）
         ├── _archive.yml      # 共通処理: Archive → .pkg の Export（→ Upload）（workflow_call）
         ├── build.yml         # 全ブランチの push / Fork からの PR
-        ├── archive.yml       # main の push
+        ├── archive.yml       # 手動実行のみ
         └── upload.yml        # develop / release/** の push
 ```
 
