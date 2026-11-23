@@ -225,7 +225,7 @@ body=$(gh pr view <番号> --json body -q .body) &&
 ├── MullionUITests/           # UI テスト（XCTest）
 ├── Mullion.xcodeproj         # 共有スキーム Mullion を含む
 ├── docs/                     # ExportOptions.plist のサンプル
-├── scripts/                  # ショートカットの生成（make-companion-shortcut.py）/ アプリアイコンの書き出し（render-app-icon.sh）/ rename.sh / ralph-loop の補助スクリプト
+├── scripts/                  # ショートカットの生成（make-companion-shortcut.py）/ アプリアイコンの書き出し（render-app-icon.sh）/ rename.sh
 ├── .swiftlint.yml            # SwiftLint 設定
 └── .github/
     ├── ISSUE_TEMPLATE/       # Issue テンプレート
