@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "project": "Mullion.xcodeproj",
+  "scheme": "Mullion",
+  "platforms": ["macOS"],
+  "uiTests": "MullionUITests",
+  "archive": { "platforms": ["macOS"] },
+  "unmanaged": [".github/workflows/app-store-screenshots.yml", ".github/workflows/app-store-creative.yml"]
+}
